@@ -32,18 +32,23 @@ public class ContactsController {
         return contactsService.getContact(userEmailAddress);
     }
 
-    @GetMapping("/searchContact/{userEmailAddress}")
-    public User[] searchContact(@PathVariable String userEmailAddress, @RequestParam String searchedFor){
+    @PostMapping("/searchContact/{userEmailAddress}")
+    public User[] searchContact(@PathVariable String userEmailAddress, @RequestBody String searchedFor){
         return contactsService.searchContact(userEmailAddress,searchedFor);
     }
 
-    @PutMapping("/addContact/{userEmailAddress}")
+    @PostMapping("/addContact/{userEmailAddress}")
     public boolean addContact(@PathVariable String userEmailAddress, @RequestBody String userAdded){
         return contactsService.addContact(userEmailAddress, gson.fromJson(userAdded,User.class));
     }
 
-    @DeleteMapping("/deleteContact/{userEmailAddress}")
+    @PostMapping("/deleteContact/{userEmailAddress}")
     public boolean deleteContact(@PathVariable String userEmailAddress, @RequestBody String userDeleted){
         return contactsService.deleteContact(userEmailAddress, gson.fromJson(userDeleted,User.class));
+    }
+
+    @PostMapping("/editContact/{userEmailAddress}")
+    public boolean editContact(@PathVariable String userEmailAddress,@RequestBody String editedData){
+        return contactsService.editContact(userEmailAddress, editedData);
     }
 }

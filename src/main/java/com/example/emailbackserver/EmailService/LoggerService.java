@@ -1,101 +1,92 @@
 package com.example.emailbackserver.EmailService;
 
+import com.example.emailbackserver.EmailModel.User;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Objects;
 
 @Service
 public class LoggerService {
-
-    private final String usersFilePath = "D:\\IntelliJ Projects\\emailBackServer\\users\\UsersData.json";
-    private Object object;
-    private JSONArray jsonArray;
+    private User[] currentUsers;
+    private final String usersDataFilePath ;
 
     public LoggerService() {
-        this.object = null;
-        this.jsonArray = null;
+        this.usersDataFilePath = "D:\\IntelliJ Projects\\emailBackServer\\users\\UsersData.json";;
+    }
+    private User deserialize(String newUser){
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        return gsonBuilder.setPrettyPrinting().create().fromJson(newUser, User.class);
+    }
+    private User[] loadUsersData() throws IOException {
+        File file = new File(usersDataFilePath);
+        FileReader fileReader = new FileReader(usersDataFilePath);
+        JSONParser jsonParser = new JSONParser();
+        Object read;
+        try {
+            read = jsonParser.parse(fileReader);
+        }
+        catch (Exception e){
+            read = "";
+        }
+
+        JSONObject jsonObject = new JSONObject();
+        JSONArray jsonArray = new JSONArray();
+        if(read instanceof JSONObject){
+            jsonObject = (JSONObject) read;
+            currentUsers = new User[] { new Gson().fromJson(jsonObject.toJSONString(), User.class) };
+        }
+        else if(read instanceof JSONArray){
+            jsonArray = (JSONArray) read;
+            GsonBuilder gsonBuilder = new GsonBuilder();
+            currentUsers = gsonBuilder.setPrettyPrinting().create().fromJson(jsonArray.toJSONString(), User[].class);
+        }
+        else currentUsers = new User[0];
+        return currentUsers;
+    }
+    private void writeInToUserFile() throws IOException {
+        String currentUsersJson = new Gson().toJson(currentUsers);
+        File file = new File(usersDataFilePath);
+        FileWriter writer = new FileWriter(file);
+        writer.write(currentUsersJson);
+        writer.flush();
+        writer.close();
     }
 
-    public String logINCheck(String email, String password){
 
-        this.jsonArray=readFile();
-        if(this.jsonArray == null) return "error log in empty this email is not found";
-
-        for (Object o : this.jsonArray) {
-            JSONObject userObject = (JSONObject) o;
-            if (userObject.get("emailAddress").equals(email)) {
-                if (userObject.get("password").equals(password)){
-                    if(userObject.get("loggedIn").equals(true)) return "error log in User is Already Logged In";
-                    else{
-                        userObject.put("loggedIn",true);
-                        writeFile(this.jsonArray);
-                        return "Welcome Back " + userObject.get("name");
-                    }
-                }
-                else return "error log in Incorrect Password";
+    public boolean logINCheck(String user) throws IOException {
+        boolean status = false;
+        User parsedNewUser = deserialize(user);
+        currentUsers = loadUsersData();
+        for (User currentUser : currentUsers) {
+            if (Objects.equals(currentUser.getEmailAddress(), parsedNewUser.getEmailAddress())) {
+                if (Objects.equals(currentUser.isLoggedIn(), true)) status = true;
+                else if (Objects.equals(currentUser.getPassword(), parsedNewUser.getPassword())) {
+                    currentUser.setLoggedIn(true);
+                    writeInToUserFile();
+                } else status = false;
+                break;
             }
         }
-        return "error log in Email is not found Please SignUp";
+        return status;
     }
-
-
-    public String logOutCheck(String email, String password){
-
-        this.jsonArray = readFile();
-        if(this.jsonArray == null) return "error log out empty this email is not found";//will not happen
-
-        for(Object o : this.jsonArray){
-            JSONObject userObject = (JSONObject) o;
-            if(userObject.get("emailAddress").equals(email)){
-                if(userObject.get("password").equals(password)){
-                    if(userObject.get("loggedIn").equals(true)){
-                        userObject.put("loggedIn",false);
-                        writeFile(this.jsonArray);
-                        return "Logged Out";
-                    }
-                    else return "error lo out User has not logged in";
-                }
-                else return "error log out Invalid Password"; // will not happen
+    public void logOutCheck(String emailAddress) throws IOException {
+        currentUsers = loadUsersData();
+        for (User currentUser : currentUsers) {
+            System.out.println(currentUser.getEmailAddress());
+            if (Objects.equals(currentUser.getEmailAddress(), emailAddress)) {
+                currentUser.setLoggedIn(false);
+                writeInToUserFile();
+                return;
             }
-        }
-        return "error log out this email is not found";
-    }
-
-
-    public JSONArray readFile(){
-
-        try{
-            JSONParser parser = new JSONParser();
-            FileReader reader = new FileReader(usersFilePath);
-            this.object = parser.parse(reader);
-        }
-        catch(Exception e){
-            e.printStackTrace();
-        }
-
-        if(object != null)
-            return (JSONArray) object;
-
-        return null;
-
-    }
-
-    public void writeFile(JSONArray jsonArray){
-
-        Gson gson = new Gson();
-
-        try{
-            FileWriter file = new FileWriter(usersFilePath);
-            file.write(gson.toJson(jsonArray));
-            file.close();
-        }
-        catch(Exception e){
-            e.printStackTrace();
         }
     }
 }

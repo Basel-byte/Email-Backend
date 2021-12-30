@@ -11,7 +11,6 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 @Service
 public class UserFilesService {
@@ -46,6 +45,7 @@ public class UserFilesService {
 
     public Message[] readMessageFile(String userEmailAddress, String fileName) throws FileNotFoundException {
         String inboxPath = this.path + userEmailAddress + "\\" + fileName + ".json";
+        System.out.println(inboxPath);
         return messageParser(new FileReader(inboxPath));
     }
     public Message[] getAllMessages(String userEmailAddress) throws FileNotFoundException{

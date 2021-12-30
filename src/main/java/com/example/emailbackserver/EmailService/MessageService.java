@@ -2,7 +2,6 @@ package com.example.emailbackserver.EmailService;
 
 import com.example.emailbackserver.EmailModel.Message;
 import com.example.emailbackserver.EmailService.MessageCriteria.*;
-import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -59,69 +58,33 @@ public class MessageService {
         return orCriteria.meetCriteria();
     }
 
-    public Message[] monoFilterMessageSearch(List<String> searchedFor, String emailAddress, List<String> criteria)
-            throws FileNotFoundException, CloneNotSupportedException {
-        MessageCriteria criteria1 = getCriterion(searchedFor.get(0), emailAddress, criteria.get(0));
-        return criteria1.meetCriteria();
-    }
 
-    public Message[] biFilteredMessageSearch(List<String> searchedFor, String emailAddress, List<String>criteria)
-            throws FileNotFoundException, CloneNotSupportedException {
-        MessageCriteria andCriteria;
-        MessageCriteria criteria1 = getCriterion(searchedFor.get(0), emailAddress, criteria.get(0));
-        MessageCriteria criteria2 = getCriterion(searchedFor.get(1), emailAddress, criteria.get(1));
-
-        andCriteria = new BinAndCriteria(criteria1, criteria2);
-        return andCriteria.meetCriteria();
-    }
-
-    public Message[] triFilteredMessageSearch(List<String> searchedFor, String emailAddress, List<String> criteria)
-            throws FileNotFoundException, CloneNotSupportedException {
-        MessageCriteria criteria1 = getCriterion(searchedFor.get(0), emailAddress, criteria.get(0));
-        MessageCriteria criteria2 = getCriterion(searchedFor.get(0), emailAddress, criteria.get(1));
-        MessageCriteria criteria3 = getCriterion(searchedFor.get(0), emailAddress, criteria.get(2));
-
-        MessageCriteria andCriteria = new TriAndCriteria(criteria1, criteria2, criteria3);
-        return andCriteria.meetCriteria();
-    }
-
-    public Message[] quadFilteredMessageSearch(List<String> searchedFor, String emailAddress, List<String>criteria)
-            throws FileNotFoundException, CloneNotSupportedException {
-        MessageCriteria criteria1 = getCriterion(searchedFor.get(0), emailAddress, criteria.get(0));
-        MessageCriteria criteria2 = getCriterion(searchedFor.get(1), emailAddress, criteria.get(1));
-        MessageCriteria criteria3 = getCriterion(searchedFor.get(2), emailAddress, criteria.get(2));
-        MessageCriteria criteria4 = getCriterion(searchedFor.get(3), emailAddress, criteria.get(3));
-
-        MessageCriteria andCriteria = new QuadAndCriteria(criteria1, criteria2, criteria3, criteria4);
-        return andCriteria.meetCriteria();
-    }
-
-    public Message[] pentaFilteredMessageSearch(List<String> searchedFor, String emailAddress, List<String> criteria)
-            throws FileNotFoundException, CloneNotSupportedException {
-        MessageCriteria criteria1 = getCriterion(searchedFor.get(0), emailAddress, criteria.get(0));
-        MessageCriteria criteria2 = getCriterion(searchedFor.get(1), emailAddress, criteria.get(1));
-        MessageCriteria criteria3 = getCriterion(searchedFor.get(2), emailAddress, criteria.get(2));
-        MessageCriteria criteria4 = getCriterion(searchedFor.get(3), emailAddress, criteria.get(3));
-        MessageCriteria criteria5 = getCriterion(searchedFor.get(4), emailAddress, criteria.get(4));
-        MessageCriteria andCriteria = new QuadAndCriteria(criteria1, criteria2, criteria3, criteria4);
-        return andCriteria.meetCriteria();
-    }
-
-    private MessageCriteria getCriterion(String criteria, String emailAddress, String searchedFor)
-            throws FileNotFoundException {
-        switch (criteria) {
-            case "to":
-                return new ToCriteria(searchedFor, filesService.readMessageFile(emailAddress, "Sent"));
-            case "from":
-                return new FromCriteria(searchedFor, filesService.readMessageFile(emailAddress, "Inbox"));
-            case "subject":
-                return new SubjectCriteria(searchedFor, filesService.getAllMessages(emailAddress));
-            case "date":
-                return new DateCriteria(searchedFor, filesService.getAllMessages(emailAddress));
-            default:
-                return new BodyCriteria(searchedFor, filesService.getAllMessages(emailAddress));
+    public Message[] filteredSearch(Message searchedFor, String emailAddress) throws FileNotFoundException, CloneNotSupportedException {
+        List<MessageCriteria> criteria = new ArrayList<>();
+        if(searchedFor.getTo().length != 0){
+            MessageCriteria toCriteria= new ToCriteria(searchedFor.getTo()[0], filesService.readMessageFile(emailAddress, "Sent"));
+            criteria.add(toCriteria);
         }
+        if(! searchedFor.getFrom().equals("")){
+            MessageCriteria fromCriteria= new FromCriteria(searchedFor.getFrom(), filesService.readMessageFile(emailAddress, "Inbox"));
+            criteria.add(fromCriteria);
+        }
+        if(! searchedFor.getBody().equals("")){
+            MessageCriteria bodyCriteria= new BodyCriteria(searchedFor.getBody(), filesService.getAllMessages(emailAddress));
+            criteria.add(bodyCriteria);
+        }
+        if(! searchedFor.getSubject().equals("")){
+            MessageCriteria subjectCriteria= new SubjectCriteria(searchedFor.getSubject(), filesService.getAllMessages(emailAddress));
+            criteria.add(subjectCriteria);
+        }
+        if(! searchedFor.getDate().equals("")){
+            MessageCriteria dateCriteria= new DateCriteria(searchedFor.getDate(), filesService.getAllMessages(emailAddress));
+            criteria.add(dateCriteria);
+        }
+        MessageCriteria andCriteria = new AndCriteria(criteria);
+        return andCriteria.meetCriteria();
     }
+
 
 
     public void starMessage(String[] id, String emailAddress) throws IOException {
@@ -154,19 +117,29 @@ public class MessageService {
                 , "Important");
     }
 
-    public void draftMessage(String[] id, String emailAddress) throws IOException {
-        List<String> idList = new ArrayList<>();
-        Collections.addAll(idList, id);
-        List<Message> draftMessages = new ArrayList();
-        Message[] allMessages = filesService.getAllMessages(emailAddress);
-        for (Message message : allMessages) {
-            if (idList.contains(message.getiD())) {
-                message.setStarred(true);
-                draftMessages.add(message);
-            }
-        }
-        filesService.updateMessageFile(emailAddress, filesService.listToArray(draftMessages)
-                , "Draft");
+//    public void draftMessage(String[] id, String emailAddress) throws IOException {
+//        List<String> idList = new ArrayList<>();
+//        Collections.addAll(idList, id);
+//        List<Message> draftMessages = new ArrayList();
+//        Message[] allMessages = filesService.getAllMessages(emailAddress);
+//        for (Message message : allMessages) {
+//            if (idList.contains(message.getiD())) {
+//                message.setStarred(true);
+//                draftMessages.add(message);
+//            }
+//        }
+//        filesService.updateMessageFile(emailAddress, filesService.listToArray(draftMessages)
+//                , "Draft");
+//    }
+
+    public void draftMessage(String message, String emailAddress) throws IOException, CloneNotSupportedException {
+        Message eMail = new GsonBuilder().create().fromJson(message, Message.class);
+        eMail.setDraft(true);
+        Message[] draftArray = this.filesService.readMessageFile(eMail.getFrom(), "Draft");
+        Message[] modifiedDraft = new Message[draftArray.length + 1];
+        for (int i = 0; i < draftArray.length; i++) modifiedDraft[i] = draftArray[i].clone();
+        modifiedDraft[draftArray.length] = eMail.clone();
+        filesService.updateMessageFile(eMail.getFrom(), modifiedDraft, "draft");
     }
 
     public void makeCustom(String[] id, String emailAddress) throws IOException {
@@ -190,8 +163,8 @@ public class MessageService {
         for(Message message : allMessages){
             if(idList.contains(message.getiD())){
                 if(Objects.equals(message.getFrom(), emailAddress))
-                    filesService.removeMessageFromFile(emailAddress, message, "Inbox");
-                else filesService.removeMessageFromFile(emailAddress, message, "Sent");
+                    filesService.removeMessageFromFile(emailAddress, message, "Sent");
+                else filesService.removeMessageFromFile(emailAddress, message, "Inbox");
 
                 filesService.removeMessageFromFile(emailAddress, message, "Starred");
                 filesService.removeMessageFromFile(emailAddress, message, "Important");

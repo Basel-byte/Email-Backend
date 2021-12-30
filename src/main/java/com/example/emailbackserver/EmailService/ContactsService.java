@@ -1,7 +1,6 @@
 package com.example.emailbackserver.EmailService;
 
 import com.example.emailbackserver.EmailModel.User;
-import com.example.emailbackserver.EmailService.UserCriteria.EmailCriteria;
 import com.example.emailbackserver.EmailService.UserCriteria.OrCriteria;
 import com.example.emailbackserver.EmailService.UserCriteria.UserCriteria;
 import com.google.gson.Gson;
@@ -13,10 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 @Service
 public class ContactsService {
@@ -51,7 +47,7 @@ public class ContactsService {
     public User[] searchAllUsers(String userOwnerEmail,String filter){
         OrCriteria orCriteria = new OrCriteria(filter,filter);
         String serializedTemp;
-        String usersPath = "C:\\Users\\hsnal\\Desktop\\كليه 2 ترم 1\\programming 2\\prog 2 lab\\lab 4\\emailBackServer\\users\\UsersData.json";
+        String usersPath = "D:\\IntelliJ Projects\\emailBackServer\\users\\UsersData.json";
         JSONArray allUsersJSON=readFile(usersPath);
         JSONObject temp;
         Gson gson = new Gson();
@@ -108,6 +104,28 @@ public class ContactsService {
         return gsonBuilder.create().fromJson(contacts.toJSONString(),User[].class);
 
     }
+
+    public boolean editContact(String userOwnerEmail,String editedData){
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        JSONObject temp = gsonBuilder.create().fromJson(editedData,JSONObject.class);
+        String editedUserEmail = temp.get("emailAddress").toString();
+        String editName = temp.get("name").toString();
+        boolean edited = false;
+        this.contactEmail = userOwnerEmail;
+        this.contactsFilePath = this.staticPath + "/" + this.contactEmail + "/Contacts.json";
+        if(readFile(this.contactsFilePath) == null) return false;
+        JSONArray contacts = readFile(this.contactsFilePath);
+        for(Object o : contacts){
+            JSONObject jsonObject = (JSONObject) o;
+            if(jsonObject.get("emailAddress").equals(editedUserEmail)){
+                jsonObject.put("name",editName);
+                edited = true;
+            }
+        }
+        writeFile(contacts,this.contactsFilePath);
+        return edited;
+    }
+
 
     public JSONArray readFile(String userFilePath){
         Object object = null;

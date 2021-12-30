@@ -6,10 +6,12 @@ import com.google.gson.GsonBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Objects;
 
 @Service
@@ -23,17 +25,17 @@ public class SignUpService {
         createFile(usersDataFilePath, "directory");
 
         this.usersDataFilePath = "D:\\IntelliJ Projects\\emailBackServer\\users\\UsersData.json";
-        createFile(usersDataFilePath, "file");
-
         this.eachUserPath = "D:\\IntelliJ Projects\\emailBackServer\\users\\";
         currentUsers = new User[0];
+
+        createFile(usersDataFilePath, "file");
     }
 
     private void createFile(String path, String type) throws IOException {
         if(!checkFileExistence(path)){
             File file = new File(path);
-            if(type == "file") file.createNewFile();
-            else if(type == "directory") file.mkdir();
+            if(Objects.equals(type, "file")) file.createNewFile();
+            else if(Objects.equals(type, "directory")) file.mkdir();
         }
     }
     private boolean checkFileExistence(String path){
@@ -41,7 +43,7 @@ public class SignUpService {
         return file.exists();
     }
 
-    private User[] loadUsersData() throws IOException, ParseException {
+    private User[] loadUsersData() throws IOException {
         File file = new File(usersDataFilePath);
         FileReader fileReader = new FileReader(usersDataFilePath);
         JSONParser jsonParser = new JSONParser();
@@ -62,13 +64,14 @@ public class SignUpService {
         else if(read instanceof JSONArray){
             jsonArray = (JSONArray) read;
             GsonBuilder gsonBuilder = new GsonBuilder();
-            currentUsers = gsonBuilder.create().fromJson(jsonArray.toJSONString(), User[].class);
+            currentUsers = gsonBuilder.setPrettyPrinting().create().fromJson(jsonArray.toJSONString(), User[].class);
         }
         else currentUsers = new User[0];
         return currentUsers;
     }
     private User deserialize(String newUser){
-        return new Gson().fromJson(newUser, User.class);
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        return gsonBuilder.setPrettyPrinting().create().fromJson(newUser, User.class);
     }
 
     private void register(User newUser, User[] currentUsers) throws CloneNotSupportedException, IOException {
@@ -98,15 +101,16 @@ public class SignUpService {
         createFile(eachUserPath + "Custom.json", "file");
         eachUserPath = eachPath;
     }
-    public boolean isRegistered(String newUser) throws IOException, ParseException, CloneNotSupportedException {
+    public boolean isRegistered(String newUser) throws IOException, CloneNotSupportedException {
         boolean repeated = false;
         User parsedNewUser = deserialize(newUser);
+        if(Objects.equals(parsedNewUser.getName(), "")) return true;
         currentUsers = loadUsersData();
-        for(int i = 0; i < currentUsers.length; i++){
-            System.out.println("stored:" + currentUsers[i].getEmailAddress()+"...");
-            System.out.println("new:" + parsedNewUser.getEmailAddress()+"...");
-              if(Objects.equals(currentUsers[i].getEmailAddress(), parsedNewUser.getEmailAddress()))
-                  repeated = true;
+        for (User currentUser : currentUsers) {
+            System.out.println("stored:" + currentUser.getEmailAddress() + "...");
+            System.out.println("new:" + parsedNewUser.getEmailAddress() + "...");
+            if (Objects.equals(currentUser.getEmailAddress(), parsedNewUser.getEmailAddress()))
+                repeated = true;
         }
         System.out.println("repeated: " + repeated + "...");
         if(!repeated) register(parsedNewUser, currentUsers);

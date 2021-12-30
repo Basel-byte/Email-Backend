@@ -2,7 +2,9 @@ package com.example.emailbackserver.EmailService.UserCriteria;
 
 import com.example.emailbackserver.EmailModel.User;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class OrCriteria implements UserCriteria{
     private String FilterName;
@@ -36,19 +38,17 @@ public class OrCriteria implements UserCriteria{
     @Override
     public User[] filter(User[] users) {
         try {
+            boolean found = false;
             User[] FilteredName = this.criteriaName.filter(users);
             User[] FilteredEmail = this.criteriaEmail.filter(users);
-            boolean foundFlag = false;
-            for (int i = 0; i < FilteredName.length; i++) {
-                for (int j = 0; j < FilteredEmail.length; j++) {
-                    if (!FilteredEmail[j].getEmailAddress().equals(FilteredName[i].getEmailAddress())) {
-                        FilteredEmail = Arrays.copyOf(FilteredEmail,FilteredEmail.length+1);
-                        FilteredEmail[FilteredEmail.length - 1] = FilteredName[i];
-                        break;
-                    }
-                }
+            List filterResult = new ArrayList<User>();
+            filterResult.addAll(Arrays.asList(FilteredName));
+            for(int i = 0; i < FilteredEmail.length; i++) {
+                if (!filterResult.contains(FilteredEmail[i]))
+                    filterResult.add(FilteredName[i]);
             }
-            return FilteredEmail;
+            User[] result = new User[filterResult.size()];
+            return (User[]) filterResult.toArray(result);
         }
         catch (Exception e){
             return null;
