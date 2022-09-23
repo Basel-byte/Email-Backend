@@ -1,11 +1,11 @@
 # Email-Backend
 
 ## Team Members:
-    Ali Hassan ElSharawy\
-    Basel Ahmed\
+    Ali Hassan ElSharawy
+    Basel Ahmed
     Louay Magdy
   
-Design Patterns used:
+## Design Patterns used:
     1- Delegation Pattern:\
        - Relation between services and controllers\
        - Relation between services and models\
