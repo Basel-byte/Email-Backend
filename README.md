@@ -3,17 +3,17 @@
 Team Members:\
   Ali Hassan ElSharawy\
   Basel Ahmed\
-  Louay Magdy\
+  Louay Magdy
   
 Design Patterns used:
     1- Delegation Pattern:\
        - Relation between services and controllers\
        - Relation between services and models\
-       - Relation between some services such as userFileService and MessageService\
+       - Relation between some services such as userFileService and MessageService
   
     2- Interface Pattern:
        - Relation between MessageCriteria class and MessageService\
-       - Relation between UserCriteria class and UserService\
+       - Relation between UserCriteria class and UserService
      
     3- Prototype Pattern:
        - Both models objects can be cloned\
