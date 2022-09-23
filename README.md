@@ -1,9 +1,9 @@
 # Email-Backend
 
-Team Members:\
-  Ali Hassan ElSharawy\
-  Basel Ahmed\
-  Louay Magdy
+#Team Members:\
+    Ali Hassan ElSharawy\
+    Basel Ahmed\
+    Louay Magdy
   
 Design Patterns used:
     1- Delegation Pattern:\
